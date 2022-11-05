@@ -83,3 +83,5 @@ Build
 Binaries
 Vault
 package-lock.json
+.deps
+artifacts
