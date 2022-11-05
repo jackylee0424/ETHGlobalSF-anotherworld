@@ -29,9 +29,6 @@ contract AnotherWorldVault is ERC1155, IERC1155Receiver, Ownable {
 
     bool public _isLocked = false;
     address public vaultOperator;
-    bytes32 public constant GAME_ADMIN_ROLE = keccak256("GAME_ADMIN_ROLE");
-    bytes32 public constant URI_SETTER_ROLE = keccak256("URI_SETTER_ROLE");
-    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
     constructor() ERC1155("") {
         name = "Another World Vault";
