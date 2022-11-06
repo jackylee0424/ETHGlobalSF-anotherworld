@@ -5,15 +5,36 @@ const AnotherWorldVaultABI = require("./abi/AnotherWorldVaultABI.json");
 const INFURA_APIKEY = functions.config().infura.api_key;
 const QUICKNODE_APIKEY = functions.config().quicknode.api_key;
 const vaultContractGoerli = functions.config().vaultcontract.goerli;
-
 const providerETHMainnet = new ethers.providers.JsonRpcProvider(
     `https://mainnet.infura.io/v3/${INFURA_APIKEY}`,
+);
+
+const providerOptimismMainnet = new ethers.providers.JsonRpcProvider(
+    `https://optimism-mainnet.infura.io/v3/${INFURA_APIKEY}`,
+);
+
+const providerPolygonMainnet = new ethers.providers.JsonRpcProvider(
+    `https://polygon-mainnet.infura.io/v3/${INFURA_APIKEY}`,
 );
 
 const providerGoerliTestnet = new ethers.providers.JsonRpcProvider(
     // `https://goerli.infura.io/v3/${INFURA_APIKEY}`
     `https://long-virulent-wish.ethereum-goerli.discover.quiknode.pro/${QUICKNODE_APIKEY}/`,
 );
+
+const vaultContractAddress = {
+  "eth": "0x00",
+  "goerli": vaultContractGoerli,
+  "op": "0x00",
+  "polygon": "0x00",
+};
+
+const providerChain = {
+  "eth": providerETHMainnet,
+  "goerli": providerGoerliTestnet,
+  "op": providerOptimismMainnet,
+  "polygon": providerPolygonMainnet,
+};
 
 // resolve ENS to address
 exports.resolveens = functions.https.onRequest((req, res) => {
@@ -51,6 +72,10 @@ exports.resolveens = functions.https.onRequest((req, res) => {
 exports.gettokenbalance = functions.https.onRequest((req, res) => {
   cors(req, res, async () => {
     const ens = req.query.ens;
+    let network = req.query.network;
+    if (!network) {
+      network = "goerli";
+    }
     switch (req.method) {
       case "GET": // handle GET request
         try {
@@ -60,17 +85,20 @@ exports.gettokenbalance = functions.https.onRequest((req, res) => {
             ethAddress = await providerETHMainnet.resolveName(ens);
           }
           if (ethAddress) {
-            // get token balance on goerli
+            if (network !== "op" &&
+              network !== "polygon" && network !== "goerli") {
+              res.status(200).send({success: false, msg: "invalid chain"});
+            }
             const vaultContract = new ethers.Contract(
-                vaultContractGoerli,
+                vaultContractAddress[network],
                 AnotherWorldVaultABI,
-                providerGoerliTestnet,
+                providerChain[network],
             );
             const tokenId = 0;
-            const balance = await vaultContract.balanceOf(ethAddress, tokenId);
-
+            const balance = await vaultContract.balanceOf(
+                ethAddress, tokenId);
             res.status(200).send({
-              network: "goerli",
+              network: network,
               tokenId: tokenId,
               balance: Number(balance.toString()),
               success: true,
@@ -95,6 +123,10 @@ exports.gettokenbalance = functions.https.onRequest((req, res) => {
 exports.airdrop = functions.https.onRequest((req, res) => {
   cors(req, res, async () => {
     const ens = req.query.ens;
+    let network = req.query.network;
+    if (!network) {
+      network = "goerli";
+    }
     switch (req.method) {
       case "GET": // handle GET request
         try {
@@ -104,10 +136,14 @@ exports.airdrop = functions.https.onRequest((req, res) => {
             ethAddress = await providerETHMainnet.resolveName(ens);
           }
           if (ethAddress) {
+            if (network !== "op" &&
+              network !== "polygon" && network !== "goerli") {
+              res.status(200).send({success: false, msg: "invalid chain"});
+            }
             const signer = new ethers.Wallet(
-                functions.config().operator.pkey, providerGoerliTestnet);
+                functions.config().operator.pkey, providerChain[network]);
             const vaultContract = new ethers.Contract(
-                vaultContractGoerli,
+                vaultContractAddress[network],
                 AnotherWorldVaultABI,
                 signer,
             );
@@ -120,6 +156,64 @@ exports.airdrop = functions.https.onRequest((req, res) => {
               tx: tx,
               tokenId: tokenId,
               amount: amount,
+              success: true,
+              ethAddress: ethAddress,
+              ens: ens,
+            });
+          } else {
+            res.status(200).send({success: false, msg: "invalid ENS"});
+          }
+        } catch (error) {
+          res.status(200).send({success: false, msg: "oops"});
+        }
+        break;
+      default:
+        res.status(405).json({
+          success: false, reason: "Unsupported request method"});
+    }
+  });
+});
+
+// get token balance based on ETH mainnet ENS
+exports.getapebalance = functions.https.onRequest((req, res) => {
+  cors(req, res, async () => {
+    const ens = req.query.ens;
+    switch (req.method) {
+      case "GET": // handle GET request
+        try {
+          let ethAddress = null;
+          if (ens.includes(".eth") ||
+          ens.includes(".id") || ens.includes(".xyz")) {
+            ethAddress = await providerETHMainnet.resolveName(ens);
+          }
+
+          const erc20BalanceOfABI = [
+            {
+              "inputs": [{
+                "internalType": "address",
+                "name": "account",
+                "type": "address",
+              }],
+              "name": "balanceOf",
+              "outputs":
+                [{"internalType": "uint256", "name": "", "type": "uint256"}],
+              "stateMutability": "view",
+              "type": "function",
+            }];
+          if (ethAddress) {
+            // get $APE balance on ETH mainnet
+            const ContractAPEAddress =
+              "0x4d224452801ACEd8B2F0aebE155379bb5D594381";
+            const ContractAPE = new ethers.Contract(
+                ContractAPEAddress,
+                erc20BalanceOfABI,
+                providerETHMainnet,
+            );
+            const balance = await ContractAPE.balanceOf(ethAddress);
+            res.status(200).send({
+              network: "eth",
+              token: "APE",
+              balance: ethers.utils.formatEther(balance),
               success: true,
               ethAddress: ethAddress,
               ens: ens,
