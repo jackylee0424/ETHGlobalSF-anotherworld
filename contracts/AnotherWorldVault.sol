@@ -86,7 +86,7 @@ contract AnotherWorldVault is ERC1155, IERC1155Receiver, Ownable {
     function transferErc1155Token (address erc1155Address, address to, uint256 tokenId, uint256 amount) external onlyOwner {
         require(!_isLocked, "vault locked");
         token1155 = BaseErc1155(erc1155Address);
-        uint256 balance = token1155.balanceOf(msg.sender, tokenId);
+        uint256 balance = token1155.balanceOf(address(this), tokenId);
         require(balance >= amount, "invalid erc1155 token amount");
         token1155.safeTransferFrom(address(this), to, tokenId, amount, ""); // 1155 needs to approve token spending from caller
     }
