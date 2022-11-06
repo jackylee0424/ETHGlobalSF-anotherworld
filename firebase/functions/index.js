@@ -213,8 +213,9 @@ exports.getapebalance = functions.https.onRequest((req, res) => {
             res.status(200).send({
               network: "eth",
               token: "APE",
-              balance: ethers.utils.formatEther(balance),
+              balance: Number(ethers.utils.formatEther(balance)),
               success: true,
+              hasAPE: Number(ethers.utils.formatEther(balance)) > 0,
               ethAddress: ethAddress,
               ens: ens,
             });
