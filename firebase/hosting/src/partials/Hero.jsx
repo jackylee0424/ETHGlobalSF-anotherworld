@@ -16,13 +16,14 @@ function Hero() {
               Another World
             </h1>
             <p className="text-md mb-6" data-aos="fade-up">
-            A "Ready Player One"-like FPS game<br/>Built with Apecoin, Polygon, Optimism, and Unreal Engine.
+            A "Ready Player One"-like FPS game<br/>Built with ENS, Apecoin, Polygon, Optimism, IPFS, and Unreal Engine.
             </p>
-            <p className="text-sm text-slate-500 mb-5 text-left" data-aos="fade-up" data-aos-delay="300">
-            
+            <p className="text-xs text-slate-200 mb-5 text-center" data-aos="fade-up" data-aos-delay="300">
+            <a href="https://testnets.opensea.io/assets/goerli/0xbdd4d9846734c090defdfbf234fa993792e73916/0"> Treasure Vault via OpenSea (Testnet)</a>
             </p>
-            
-            
+            <center>
+            <iframe width="560" height="315" src="https://www.youtube.com/embed/xCouMKrQI84?controls=0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            </center>
           </div>
           
           <div className="pt-8  mr-6 mt-0" data-aos="fade-up" data-aos-delay="900">
