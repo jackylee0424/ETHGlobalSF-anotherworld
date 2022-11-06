@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 //
-// https://wizard.openzeppelin.com/#erc1155
 // AnotherWorldVault
+// ETH Global Hackathon SF
 //
 
 pragma solidity ^0.8.17;
@@ -9,6 +9,7 @@ pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 
 abstract contract BaseErc20 {
     function balanceOf(address account) public virtual returns (uint256);
@@ -24,6 +25,7 @@ abstract contract BaseErc1155 {
 contract AnotherWorldVault is ERC1155, IERC1155Receiver, Ownable {
     string public name;
     string public symbol;
+    string public baseUri;
     BaseErc20 private token20;
     BaseErc1155 private token1155;
 
@@ -43,7 +45,11 @@ contract AnotherWorldVault is ERC1155, IERC1155Receiver, Ownable {
     }
 
     function setURI(string memory newuri) public onlyOwner {
-        _setURI(newuri);
+        baseUri = newuri;
+    }
+
+    function uri(uint256 tokenId) public override view returns (string memory) {
+        return string(abi.encodePacked(baseUri, Strings.toString(tokenId), ".json"));
     }
 
     function setvaultOperator(address newOperator) public onlyOwner {
@@ -101,7 +107,6 @@ contract AnotherWorldVault is ERC1155, IERC1155Receiver, Ownable {
         require(payable(msg.sender).send(address(this).balance));
     }
 
-    
     function onERC1155Received(
         address, 
         address, 
@@ -122,7 +127,6 @@ contract AnotherWorldVault is ERC1155, IERC1155Receiver, Ownable {
         return bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"));
     }  
     
-
     function random() internal view returns (uint256) {
         return uint256(keccak256(abi.encodePacked(block.timestamp, block.difficulty)));
     }
