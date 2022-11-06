@@ -5,6 +5,9 @@ const AnotherWorldVaultABI = require("./abi/AnotherWorldVaultABI.json");
 const INFURA_APIKEY = functions.config().infura.api_key;
 const QUICKNODE_APIKEY = functions.config().quicknode.api_key;
 const vaultContractGoerli = functions.config().vaultcontract.goerli;
+const vaultContractPolygon = functions.config().vaultcontract.polygon;
+const vaultContractPolygonMumbai = functions.config().vaultcontract.mumbai;
+const vaultContractOptimism = functions.config().vaultcontract.op;
 const providerETHMainnet = new ethers.providers.JsonRpcProvider(
     `https://mainnet.infura.io/v3/${INFURA_APIKEY}`,
 );
@@ -17,6 +20,11 @@ const providerPolygonMainnet = new ethers.providers.JsonRpcProvider(
     `https://polygon-mainnet.infura.io/v3/${INFURA_APIKEY}`,
 );
 
+const providerPolygonMumbai = new ethers.providers.JsonRpcProvider(
+    `https://polygon-mumbai.infura.io/v3/${INFURA_APIKEY}`,
+);
+
+
 const providerGoerliTestnet = new ethers.providers.JsonRpcProvider(
     // `https://goerli.infura.io/v3/${INFURA_APIKEY}`
     `https://long-virulent-wish.ethereum-goerli.discover.quiknode.pro/${QUICKNODE_APIKEY}/`,
@@ -25,8 +33,9 @@ const providerGoerliTestnet = new ethers.providers.JsonRpcProvider(
 const vaultContractAddress = {
   "eth": "0x00",
   "goerli": vaultContractGoerli,
-  "op": "0x00",
-  "polygon": "0x00",
+  "op": vaultContractOptimism,
+  "polygon": vaultContractPolygon,
+  "mumbai": vaultContractPolygonMumbai,
 };
 
 const providerChain = {
@@ -34,6 +43,7 @@ const providerChain = {
   "goerli": providerGoerliTestnet,
   "op": providerOptimismMainnet,
   "polygon": providerPolygonMainnet,
+  "mumbai": providerPolygonMumbai,
 };
 
 // resolve ENS to address
@@ -85,7 +95,7 @@ exports.gettokenbalance = functions.https.onRequest((req, res) => {
             ethAddress = await providerETHMainnet.resolveName(ens);
           }
           if (ethAddress) {
-            if (network !== "op" &&
+            if (network !== "op" && network !== "mumbai" &&
               network !== "polygon" && network !== "goerli") {
               res.status(200).send({success: false, msg: "invalid chain"});
             }
@@ -136,12 +146,14 @@ exports.airdrop = functions.https.onRequest((req, res) => {
             ethAddress = await providerETHMainnet.resolveName(ens);
           }
           if (ethAddress) {
-            if (network !== "op" &&
+            if (network !== "op" && network !== "mumbai" &&
               network !== "polygon" && network !== "goerli") {
               res.status(200).send({success: false, msg: "invalid chain"});
             }
             const signer = new ethers.Wallet(
                 functions.config().operator.pkey, providerChain[network]);
+            const nouce = await signer.getTransactionCount();
+            console.log("nouce", nouce, network);
             const vaultContract = new ethers.Contract(
                 vaultContractAddress[network],
                 AnotherWorldVaultABI,
@@ -149,10 +161,18 @@ exports.airdrop = functions.https.onRequest((req, res) => {
             );
             const tokenId = 0; // TODO: expose to game
             const amount = 1; // TODO: expose to game
+
             const tx = await vaultContract.mint(ethAddress, tokenId, amount);
 
+            /*
+            // TODO: gas estimation for specific chains
+            const tx = await vaultContract.mint(ethAddress, tokenId, amount, {
+              gasLimit: 200000,
+              nouce: nouce,
+            });*/
+
             res.status(200).send({
-              network: "goerli",
+              network: network,
               tx: tx,
               tokenId: tokenId,
               amount: amount,
@@ -213,8 +233,9 @@ exports.getapebalance = functions.https.onRequest((req, res) => {
             res.status(200).send({
               network: "eth",
               token: "APE",
-              balance: ethers.utils.formatEther(balance),
+              balance: Number(ethers.utils.formatEther(balance)),
               success: true,
+              hasAPE: Number(ethers.utils.formatEther(balance)) > 0,
               ethAddress: ethAddress,
               ens: ens,
             });
