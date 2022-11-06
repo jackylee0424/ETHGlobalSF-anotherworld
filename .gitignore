@@ -86,3 +86,4 @@ package-lock.json
 .deps
 artifacts
 .runtimeconfig.json
+WM_InputManager_Plugin
