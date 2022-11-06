@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 //
-// AnotherWorldVault
+// AnotherWorldVault V1
 // ETH Global Hackathon SF
 //
 // This is a treasure vault to manage in-game erc20/1155 drops (mint/transfer) in-game items
