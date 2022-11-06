@@ -3,6 +3,10 @@
 // AnotherWorldVault
 // ETH Global Hackathon SF
 //
+// This is a treasure vault to manage in-game erc20/1155 drops (mint/transfer) in-game items
+// The game server owns vaultOperator wallet can mint in-game items to players.
+// This vault can receive external erc20/1155 tokens then to be airdropped to players.
+//
 
 pragma solidity ^0.8.17;
 
@@ -11,12 +15,14 @@ import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
+// external erc20 tokens
 abstract contract BaseErc20 {
     function balanceOf(address account) public virtual returns (uint256);
     function transfer(address recipient, uint256 amount) public virtual;
     function transferFrom(address sender, address recipient, uint256 amount) public virtual returns (bool);
 }
 
+// external erc1155 tokens
 abstract contract BaseErc1155 {
     function balanceOf(address account, uint256 id) public virtual returns (uint256);
     function safeTransferFrom(address from, address to, uint256 id, uint256 amount, bytes calldata data) public virtual;
@@ -38,7 +44,8 @@ contract AnotherWorldVault is ERC1155, IERC1155Receiver, Ownable {
         vaultOperator = msg.sender;
     }
 
-    event Received(address, uint);
+    event Received(address, uint256);
+    event Minted(address, uint256, uint256);
 
     receive() external payable {
         emit Received(msg.sender, msg.value);
@@ -60,16 +67,9 @@ contract AnotherWorldVault is ERC1155, IERC1155Receiver, Ownable {
         public
     {
         require(!_isLocked, "vault locked");
-        require(msg.sender == vaultOperator, "invalid operator");
+        require(msg.sender == vaultOperator, "invalid operator"); // only vaultOperator can mint
         _mint(account, id, amount, "");
-    }
-
-    function mintBatch(address to, uint256[] memory ids, uint256[] memory amounts)
-        public
-    {
-        require(!_isLocked, "vault locked");
-        require(msg.sender == vaultOperator, "invalid operator");
-        _mintBatch(to, ids, amounts, "");
+        emit Minted(account, id, amount);
     }
 
     function toggleLock(bool locked) public onlyOwner {
@@ -135,7 +135,7 @@ contract AnotherWorldVault is ERC1155, IERC1155Receiver, Ownable {
         address _owner,
         address _operator
     ) public override view returns (bool isOperator) {
-       // vault contract instance can move 1155 vault tokens
+       // vaultOperator address can move minted 1155 tokens
        if (_operator == vaultOperator) {
             return true;
         }
