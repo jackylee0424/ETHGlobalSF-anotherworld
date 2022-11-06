@@ -1,0 +1,9 @@
+{
+    "name": "Gold",
+    "description": "Enter Another World - an ETH Global Hackathon project.",
+    "image": "https://anotherworld-e7101.web.app/static/gold0.png",
+    "attributes": [{
+      "type": "GOLD"
+     }],
+    "external": "https://anotherworld-e7101.web.app"
+}
